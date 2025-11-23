@@ -8,11 +8,6 @@ from PIL import Image
 import gspread
 from google.oauth2.service_account import Credentials
 import io
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
-
 # --- CONFIGURATION ---
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
@@ -38,6 +33,7 @@ def get_google_connection():
         gc = gspread.authorize(creds)
         return gc
     except Exception as e:
+        st.error(f"Detailed Connection Error: {e}")
         return None
 
 @st.cache_data(ttl=60) 
