@@ -217,27 +217,35 @@ def main_app():
 
         reports_list = db.get_list("Reports")
         reports_list.sort(key=lambda x: x['Date_Created'], reverse=True)
-        report_options = {f"{r['Name']} ({r['Date_Created']})": r for r in reports_list}
+        report_options = {r['Name']: r for r in reports_list}
         
         st.sidebar.markdown("---")
-        selected_report = st.sidebar.selectbox("📂 Load / Duplicate", ["None"] + list(report_options.keys()))
+        selected_report_name = st.sidebar.selectbox("📂 Load / Duplicate", ["None"] + list(report_options.keys()))
         
-        d_style, d_color, d_stage, d_temp, d_meas = "", "", "PPS", None, {}
+        if selected_report_name != "None" and st.sidebar.button("🗑️ Delete Selected Report"):
+             report_to_delete = report_options[selected_report_name]
+             db.delete_entry("Reports", report_to_delete['ID'])
+             st.success(f"Deleted {selected_report_name}")
+             st.rerun()
         
-        if selected_report != "None":
-            r_data = json.loads(report_options[selected_report]['JSON_Data'])
+        d_style, d_color, d_po, d_stage, d_temp, d_meas = "", "", "", "PPS", None, {}
+        
+        if selected_report_name != "None":
+            r_data = json.loads(report_options[selected_report_name]['JSON_Data'])
             d_style = r_data.get('style', "")
             d_color = r_data.get('color', "")
+            d_po = r_data.get('po_number', "")
             d_stage = r_data.get('stage', "PPS")
             d_temp = r_data.get('template_name', "")
             d_meas = r_data.get('measurements', {})
-            st.info(f"Loaded: {selected_report}")
+            st.info(f"Loaded: {selected_report_name}")
 
         with st.expander("1. Job Details", expanded=True):
-            c1, c2, c3 = st.columns(3)
+            c1, c2, c3, c3b = st.columns(4)
             style = c1.text_input("Style #", value=d_style)
             color = c2.text_input("Color", value=d_color)
-            stage = c3.selectbox("Stage", ["Proto", "PPS", "Production"], index=["Proto", "PPS", "Production"].index(d_stage) if d_stage in ["Proto", "PPS", "Production"] else 1)
+            po_number = c3.text_input("PO #", value=d_po)
+            stage = c3b.selectbox("Stage", ["Proto", "PPS", "Production"], index=["Proto", "PPS", "Production"].index(d_stage) if d_stage in ["Proto", "PPS", "Production"] else 1)
             c4, c5 = st.columns(2)
             sel_cust = c4.selectbox("Select Customer (For Emailing)", ["None"] + list(customer_map.keys()))
             avail_temps = list(template_map.keys())
@@ -341,11 +349,22 @@ def main_app():
             if st.button("💾 Save to Cloud"):
                 if not style: st.error("Style # required")
                 else:
-                    save_name = f"{style} - {color}"
-                    save_data = {"style": style, "color": color, "stage": stage, "template_name": sel_temp, "measurements": current_meas}
+                    # Naming convention: PO# - Name - Color - Date
+                    date_str = datetime.now().strftime("%Y-%m-%d")
+                    po_part = f"{po_number} - " if po_number else ""
+                    save_name = f"{po_part}{style} - {color} - {date_str}"
+                    
+                    save_data = {
+                        "style": style, 
+                        "color": color, 
+                        "po_number": po_number,
+                        "stage": stage, 
+                        "template_name": sel_temp, 
+                        "measurements": current_meas
+                    }
                     with st.spinner("Saving..."):
                         db.save_entry("Reports", save_name, save_data)
-                    st.success("Saved!")
+                    st.success(f"Saved as: {save_name}")
         with col_act2:
             if st.button("📄 Preview/Download PDF"):
                 pdf_bytes = generate_pdf_bytes()
