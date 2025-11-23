@@ -8,7 +8,7 @@ from PIL import Image
 import gspread
 from google.oauth2.service_account import Credentials
 import io
-# --- CONFIGURATION ---
+
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
     'https://www.googleapis.com/auth/drive'
@@ -17,16 +17,16 @@ SHEET_NAME = "Softwood_QA_Index"
 
 st.set_page_config(page_title="Softwood QA App", page_icon="🧵", layout="wide")
 
-# --- SECURE GOOGLE CONNECTIVITY ---
+
 @st.cache_resource
 def get_google_connection():
     try:
-        # METHOD 1: Look for Secrets (Cloud Mode)
+
         if "gcp_service_account" in st.secrets:
             creds_dict = st.secrets["gcp_service_account"]
-            # Create credentials from the dictionary in secrets
+
             creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-        # METHOD 2: Look for Local File (Backup for your laptop)
+
         else:
             creds = Credentials.from_service_account_file("service_account.json", scopes=SCOPES)
             
@@ -102,9 +102,9 @@ if 'google_db' not in st.session_state:
 
 db = st.session_state.google_db
 
-# --- SECURE EMAIL FUNCTION ---
+
 def send_email_with_pdf(recipient_list, subject, body, pdf_bytes, pdf_filename):
-    # Retrieve secrets safely
+
     try:
         SENDER_EMAIL = st.secrets["email"]["address"]
         SENDER_PASSWORD = st.secrets["email"]["password"]
@@ -132,7 +132,7 @@ def send_email_with_pdf(recipient_list, subject, body, pdf_bytes, pdf_filename):
     except Exception as e:
         return False, str(e)
 
-# --- PDF CLASS ---
+
 class PDF(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 16)
@@ -145,12 +145,12 @@ class PDF(FPDF):
         self.set_font('Arial', 'I', 8)
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
 
-# --- MAIN APP ---
+
 def main_app():
     st.sidebar.title("Navigation")
     mode = st.sidebar.radio("Go to:", ["New Inspection", "Admin (Templates)", "Admin (Customers)"])
 
-    # --- ADMIN: TEMPLATES ---
+
     if mode == "Admin (Templates)":
         st.title("🛠️ Template Builder")
         templates_list = db.get_list("Templates")
@@ -174,7 +174,7 @@ def main_app():
                 st.success("Deleted.")
                 st.rerun()
 
-    # --- ADMIN: CUSTOMERS ---
+
     elif mode == "Admin (Customers)":
         st.title("👥 Customer & Email Management")
         customers_list = db.get_list("Customers")
@@ -201,7 +201,7 @@ def main_app():
                             st.rerun()
                 except: continue
 
-    # --- INSPECTION MODE ---
+
     elif mode == "New Inspection":
         st.title("📋 New Quality Report")
         
