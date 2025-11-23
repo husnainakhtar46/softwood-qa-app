@@ -8,6 +8,10 @@ from PIL import Image
 import gspread
 from google.oauth2.service_account import Credentials
 import io
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 
 SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
